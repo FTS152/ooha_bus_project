@@ -1,7 +1,7 @@
 # ooha_bus_project
 紀錄四個大三生在專題中struggle的過程
 
-Python Usuag:
+Python Usage:
 ```
 python dump.py (dump data from Elastic search
 ```
