@@ -4,6 +4,10 @@
 Python Usuag:
 ```
 python dump.py (dump data from Elastic search
+```
+```
 python preprocess.py (clustering each face to a bus
-python offforecase.py (given on data and off average, generate the number of passengers between every stops
+```
+```
+python offforecast.py (given on data and off average, generate the number of passengers between every stops
 ```
