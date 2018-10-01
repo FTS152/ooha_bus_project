@@ -3,11 +3,18 @@
 
 Python Usage:
 ```
-python dump.py (dump data from Elastic search
+python dump.py [routeName] [direction] [date(YYYY-mm-dd)](dump data from Elastic search
 ```
 ```
-python preprocess.py (clustering each face to a bus
+python preprocess.py [routeName] [direction] (clustering each face to a bus
 ```
 ```
-python offforecast.py (given on data and off average, generate the number of passengers between every stops
+python onforecast.py [routeName] [direction] [time(YYYY-mm-dd HH:MM:SS)] (predict certain bus
+```
+
+```
+python offforecast.py [routeName] [direction] (given on data and off average, generate the number of passengers between every stops
+```
+```
+python validation.py [routeName] [direction] (validate with MAD
 ```
