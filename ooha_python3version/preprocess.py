@@ -1,95 +1,146 @@
 import dill
+import numpy as np
+import time, datetime
 file = open('results','rb')
 number = dill.load(file)
 
-#need edit when direction or route is different
+import sys
+routeName = sys.argv[1]
+direction = int(sys.argv[2])
+
 import json
-with open('./MOTC/920.json', 'r', encoding="utf-8") as f:
+with open('./MOTC/'+routeName+'.json', 'r', encoding="utf-8") as f:
     data = json.load(f)
 stopLat = []
 stopLon = []
-for i in data[1]['Stops']:
-    stopLat.append(i['StopPosition']['PositionLat'])
-    stopLon.append(i['StopPosition']['PositionLon'])
-    
-data = []
-for i in range(len(number[0])):
-    if(number[0][i]=='920'):
-        data.append([number[0][i],number[1][i],number[2][i],number[3][i],number[4][i],number[5][i],number[6][i],number[7][i],number[8][i]])
-
+if direction == int(0):
+    for i in data[0]['Stops']:
+        stopLat.append(i['StopPosition']['PositionLat'])
+        stopLon.append(i['StopPosition']['PositionLon'])
+else:
+    for i in data[1]['Stops']:
+        stopLat.append(i['StopPosition']['PositionLat'])
+        stopLon.append(i['StopPosition']['PositionLon'])
 #index of data: 6=direction,7=date,8=time
-data = sorted(data,key = lambda x: (x[1], x[7], x[8]))
+number = sorted(number,key = lambda x: (str(x[1]), str(x[7]),str(x[8])))
 
-import numpy as np
-import time
+stopName = np.empty((len(number),4),dtype='a32')
+stopTime = np.empty((len(number),len(stopLat)),dtype='a32')
+rangedDataFull = np.zeros((6,len(number),len(stopLat))) #0: little m 1: young m 2: old m 3: little f 4: young f 5: old f
 
 def pos(lat,lon,stopLat,stopLon):
     M = 1
-    for i,j,k in zip(stopLat,stopLon,range(1,len(stopLat)+1)):
+    for i,j,k in zip(stopLat,stopLon,range(len(stopLat))):
         distance = pow((lat - i),2) + pow((lon - j),2)
         if(distance < M):
             stop = k
             M = distance
     return int(stop)
 
+#0: sunny 1: rainy
+def weather(time):
+    return int(0)
+
+def passenger(sex,age):
+    if int(age)<25:
+        if sex == 'male':
+            return int(0)
+        else:
+            return int(3)
+    elif int(age)<45 and int(age)>=25:
+        if sex == 'male':
+            return int(1)
+        else:
+            return int(4)
+    else:
+        if sex == 'male':
+            return int(2)
+        else:
+            return int(5)
+
 
 def schedule(data):
-    stopInfo = np.zeros((len(data),len(data)))
+    global stopTime
     global stopName
-    stopName = []
-    counter = 0
-    stopName.append(str(data[0][7])+" "+str(data[0][8])+" "+str(data[0][6]))
-    stopInfo[0,0] = pos(data[0][2],data[0][3],stopLat,stopLon)
-    for i in range(1,len(data)):
-        if data[i][7]!=data[i-1][7] or data[i][6]!=data[i-1][6] or int(data[i][8].split(':')[0])-int(data[i-1][8].split(':')[0])>2:
+    global rangedDataFull
+    stopInfo = np.zeros((len(data),len(stopLat)))
+    counter = -1
+
+    for i in range(0,len(data)):
+        if i!=0:
+            cur = datetime.datetime.strptime(data[i][8],'%H:%M:%S')
+            pre = datetime.datetime.strptime(data[i-1][8],'%H:%M:%S')
+        else:
+            cur = datetime.datetime.strptime(data[i][8],'%H:%M:%S')
+            pre = datetime.datetime.strptime(data[i][8],'%H:%M:%S')            
+        if data[i][7]!=data[i-1][7] or data[i][6]!=data[i-1][6] or data[i][1]!=data[i-1][1] or (cur-pre).seconds>3600 or i == 0:
             counter = counter + 1
-        for j in range(len(stopInfo)):
-            if not stopInfo[counter,j]:
-                if j == 0:
-                    stopName.append(str(data[i][7])+" "+str(data[i][8])+" "+str(data[i][6]))
-                stopInfo[counter,j] = pos(data[i][2],data[i][3],stopLat,stopLon)
-                break
-    for i in range(len(stopInfo)):
-        if sum(stopInfo[i,:]) == 0:
-            bottom = i
-            break
-    for i in range(len(stopInfo)):
-        if sum(stopInfo[:,i]) == 0:
-            right = i
-            break
-    stopInfoZero = np.zeros((bottom,right))
-    for i in range(bottom):
-        for j in range(right):
-            stopInfoZero[i,j]=stopInfo[i,j]
-            
-            
-    return stopInfoZero
+            now = 0
+            stopName[counter][0] = str(data[i][7])+" "+str(data[i][8])
+            stopName[counter][1] = str(data[i][6])
+            stopName[counter][2] = weather(stopName[counter][0])       
+        a = pos(data[i][2],data[i][3],stopLat,stopLon)
+        stopInfo[counter][a] = stopInfo[counter][a]+1
+        rangedDataFull[passenger(data[i][4],data[i][5])][counter][a] = rangedDataFull[passenger(data[i][4],data[i][5])][counter][a] + 1
+        if(stopTime[counter][a].decode("utf-8") == '' and a >= now):
+            stopTime[counter][a] = str(data[i][8])
+            now = a
 
-def passVector(stopInfo):
-    global stopName
-    stopVec = np.zeros((len(stopInfo),len(stopLat)))
-    delete = []
+    less = []
     for i in range(len(stopInfo)):
-        for j in range(len(stopInfo[0])):
-            if (stopInfo[i,j]==0):
+        if sum(stopInfo[i,:]) <= 15:
+            less.append(i) 
+    stopInfo = np.delete(stopInfo, less, 0)
+    stopTime = np.delete(stopTime, less, 0)
+    stopName = np.delete(stopName, less, 0)
+    r = np.zeros((6,len(data)-len(less),len(stopLat)))
+    for i in range(len(rangedDataFull)):
+        r[i] = np.delete(rangedDataFull[i], less, 0)
+    rangedDataFull = r
+
+    for i in range(len(stopTime)):
+        for j in range(len(stopTime[0])):
+            if not stopTime[i,j].decode("utf-8") == '':
+                start = datetime.datetime.strptime(stopTime[i,j].decode("utf-8"),'%H:%M:%S')
+                startStop = j
                 break
+        for j in range(startStop,len(stopTime[0])):
+            if stopTime[i,j].decode("utf-8") == '':
+                continue
+            cur = datetime.datetime.strptime(stopTime[i,j].decode("utf-8"),'%H:%M:%S')
+            stopTime[i,j] = (cur - start).seconds + 30*startStop
+
+        pre = ''
+        for j in range(len(stopTime[0])):
+            if pre == '' and stopTime[i,j].decode("utf-8") == '':
+                continue
+            elif pre != '' and stopTime[i,j].decode("utf-8") == '':
+                nex = j
+                while stopTime[i,nex].decode("utf-8") == '':
+                    nex = nex + 1
+                    if(nex == len(stopTime[0])):
+                        break
+                if nex == len(stopTime[0]):
+                    break
+
+                las = float(stopTime[i,nex])
+                for k in range(j,nex):
+                    stopTime[i,k] = float((k-j+1)*((las - pre)/(nex-j+1)) + pre)
+                pre = las
+                j = nex
             else:
-                stopVec[i,int(stopInfo[i,j])-1]=int(stopVec[i,int(stopInfo[i,j])-1])+1
-        #print(sum(stopVec[i,:]))
-        if (sum(stopVec[i,:])<=2):
-            delete.append(i)
+                pre =float(stopTime[i,j])
 
-    stopVec = np.delete(stopVec,delete,0)
-    for i in sorted(delete, reverse=True): 
-        del stopName[i]
+    return stopInfo
 
-    return(stopVec)
-            
-            
-cleanData = passVector(schedule(data))
+rangedData = schedule(number)
 
 import dill
-file = open('cleanData', 'wb')
-dill.dump(cleanData,file)
+file = open('rangedData', 'wb')
+dill.dump(rangedData,file)
 file = open('stopName', 'wb')
 dill.dump(stopName,file)
+file = open('rangedDataFull', 'wb')
+dill.dump(rangedDataFull,file)
+file = open('stopTime', 'wb')
+dill.dump(stopTime,file)
