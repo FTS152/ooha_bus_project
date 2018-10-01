@@ -1,6 +1,7 @@
 library('jsonlite')
 library('rjson')
 result <- fromJSON(file = "920.json")
+busInfo <<- c()
 Rawdata <- read.table("data.csv",header = TRUE, sep=",")
 data <- c()
 for(i in 1:nrow(Rawdata)){
@@ -34,6 +35,7 @@ schedule<-function(data){
 	stopName <- c()
 	counter=1
 	stopName<-append(stopName,paste(paste(data$date[1],data$time[1]),data$direction[1]))
+	busInfo <<- rbind(busInfo,c(paste(data$date[1],data$time[1]),data$direction[1],weekdays(as.Date(data$date[1])),strsplit(as.character(data$time[1]),split=":")[[1]][1]))
 	stopInfo[1,1]=pos(data$latitude[1],data$longitude[1],position)
 	for(i in 2:nrow(data)){
 		if(data$date[i]!=data$date[i-1]||
@@ -44,6 +46,7 @@ schedule<-function(data){
 			if(is.na(stopInfo[j,counter])){
 				if(j==1){
 					stopName<-append(stopName,paste(paste(data$date[i],data$time[i]),data$direction[i]))
+					busInfo <<- rbind(busInfo,c(paste(data$date[i],data$time[i]),data$direction[i],weekdays(as.Date(data$date[i])),strsplit(as.character(data$time[i]),split=":")[[1]][1]))
 				}
 				stopInfo[j,counter]=pos(data$latitude[i],data$longitude[i],position)
 				break
@@ -52,6 +55,15 @@ schedule<-function(data){
 	}
 	stopInfo<-stopInfo[-which(apply(stopInfo,1,function(x)all(is.na(x)))), -which(apply(stopInfo,2,function(x)all(is.na(x))))]
 	colnames(stopInfo)<-stopName
+
+	clus <- c()
+	for(i in 1:nrow(busInfo)){
+		d = strsplit(busInfo[i,1],split=" ")[[1]][1]
+		t = strsplit(busInfo[i,1],split=" ")[[1]][2]
+		clus <- append(clus,cluster(d,t))
+	}
+	busInfo<<-cbind(busInfo,clus)
+
 	return(stopInfo)
 }
 
@@ -70,41 +82,60 @@ passVector<-function(stopInfo){
 		 	del=append(del,-i)
 	}
 	stopVec <- stopVec[,del]
-	stopVecNorm<-matrix(0,nrow=nrow(position),ncol=ncol(stopVec))
-	colnames(stopVecNorm)<-colnames(stopVec)
-	for(i in 1:ncol(stopVec)){
-
-		for(j in 1:nrow(stopVec)){
-			stopVecNorm[j,i]=as.numeric(stopVec[j,i])/sum(as.numeric(stopVec[,i]))
-		}
-	}
+	busInfo <<- busInfo[del,]
 	return(stopVec)
 }
 
-letsClus<-function(stopVecNorm,clusNum){
-	clus<-kmeans(t(stopVecNorm),centers=clusNum)[[1]]
-	clusResult<-matrix(nrow=ncol(stopVecNorm),ncol=clusNum)
-	for(i in 1:ncol(stopVecNorm)){
-		for(j in 1:nrow(clusResult)){
-			if(is.na(clusResult[j,as.numeric(clus[i])])){
-				clusResult[j,as.numeric(clus[i])]=colnames(stopVecNorm)[i]
-				break
-			}
-		}
+cluster<-function(date,time){
+	wd = weekdays(as.Date(date))
+	hr = strsplit(as.character(time),split=":")[[1]][1]
+	if( wd == weekdays(as.Date("2011-01-01"))||
+		wd == weekdays(as.Date("2011-01-02"))){
+		if(as.numeric(hr)<=12) 
+			return("weekend morning")
+		else
+			return("weekend afternoon")
 	}
-	clusResult<-clusResult[-which(apply(clusResult,1,function(x)all(is.na(x)))),]
-	return(clusResult)
+	else{
+		if(as.numeric(hr)>=7 && as.numeric(hr)<=9) 
+			return("weekday rush1")
+		if(as.numeric(hr)>=17 && as.numeric(hr)<=19)
+			return("weekday rush2")
+		else
+			return("weekday off-peak")		
+	}
 }
 
-sweetClus<-function(stopVecNorm){
-	sweet=c()
-	for(i in 1:30){
-		clus<-kmeans(t(stopVecNorm),centers=i)$betweenss/kmeans(t(stopVecNorm),centers=i)$totss
-		sweet<-append(sweet,clus)
+onforecast<-function(stopVec,routeName,date,startTime,direction){
+
+	clus <- cluster(date,startTime)
+	select <- c()
+	for(i in 1:nrow(busInfo)){
+		if(busInfo[i,2]==direction && busInfo[i,5]==clus && busInfo[i,1]>paste(date,startTime))
+			select <- cbind(select,stopVec[,i])
 	}
-	plot(x=1:30,y=sweet)
-	lines(x=1:30,y=sweet)
-	return(sweet)
+	forecast <- vector("numeric",nrow(select))
+	for(i in ncol(select):(ncol(select)-2)){
+		if(i<0) return("no history data!")
+		for(j in 1:nrow(select))
+			forecast[j] = forecast[j] + (1/3)*select[j,i]
+	}
+	return(round(forecast))
+
+}
+
+regforecast<-function(stopVec,routeName,date,startTime,direction){
+
+	x <- c()
+	for(i in 1:nrow(busInfo)){
+		t = as.numeric(busInfo[i,4])
+		wd = busInfo[i,3]
+		if( wd == weekdays(as.Date("2011-01-01"))||
+			wd == weekdays(as.Date("2011-01-02")))
+			isWeekend = 1
+		else
+			isWeekend = 0
+	}
 }
 
 predict<-function(stopVec,offTrue,direction){
