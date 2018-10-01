@@ -1,5 +1,5 @@
 # ooha_bus_project
-紀錄四個大三生在專題中struggle的過程
+紀錄四個大四生在專題中struggle的過程
 
 Python Usage:
 ```
