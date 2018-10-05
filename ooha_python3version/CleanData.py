@@ -1,6 +1,4 @@
-
-# coding: utf-8
-
+#data must meet the following data rule
 #csv file column
 #0 : route number
 #1 : player info(car number)
@@ -14,12 +12,20 @@
 
 # argument: data as a matrix or dataframe , given time standard(in seconds), testNum(number)
 # process: check if a particular row of data should be deleted
-# output: return a dataframe in which unneeded data are omitted.
-
+# output: return a dataframe in which unneeded data are omitted
 
 import dill
 import pandas as pd
-import numpy
+import numpy 
+
+
+#******important****** the 'results' in open() can be replaced by given fileName. User can change it.
+#file = open('results','rb')
+#remember to close the file
+#results = dill.load(file)
+#inputData = pd.DataFrame(results)
+
+
 def cleanData(inputData,ageStandard,timeStandard,testNum):
     inputData=inputData.T.sort_values(by=[0,1,7,8]) #sort data by 0 route number 1 player info 7 date 8 time
     inputData=inputData.reset_index()  
@@ -36,9 +42,9 @@ def cleanData(inputData,ageStandard,timeStandard,testNum):
         time[i][3] = float(temp[2])#second
 
     for i in range(0,arrayNum-1):
-        if(checkIfDelete[i]==1): #if the data is already deleted ,skip
+        if(checkIfDelete[i]==1):
             continue
-        if((i+testNum)>arrayNum-1): #if test number is over the data num,skip
+        if((i+testNum)>arrayNum-1):
             loopNum = arrayNum-1-i
            
         else:
@@ -46,24 +52,24 @@ def cleanData(inputData,ageStandard,timeStandard,testNum):
         
         for j in range(1,loopNum+1):
             
-            if(checkIfDelete[i+j]==1): #if the data is already deleted ,skip
+            if(checkIfDelete[i+j]==1):
                 continue
-            if(inputData[i][1]!=inputData[i+j][1]): # car number different
+            if(inputData[i][1]!=inputData[i+j][1]):
                 continue
-            if(inputData[i][0]!=inputData[i+j][0]): # route number different
+            if(inputData[i][0]!=inputData[i+j][0]):
                 continue
-            if(inputData[i][6]!=inputData[i+j][6]): # direction different
+            if(inputData[i][6]!=inputData[i+j][6]):
                 continue
-            if(inputData[i][4]!=inputData[i+j][4]): # gender different
+            if(inputData[i][4]!=inputData[i+j][4]):
                 continue
-            if(inputData[i][7]!=inputData[i+j][7]): # date different
+            if(inputData[i][7]!=inputData[i+j][7]):
                 continue
-            if(timeDifference(time,i,j)>timeStandard): # time difference larger than given range
+            if(timeDifference(time,i,j)>timeStandard):
                 continue
-            if(ageDifference(inputData,i,j)>ageStandard): # age difference larger than given range
+            if(ageDifference(inputData,i,j)>ageStandard):
                 continue
             
-            checkIfDelete[i+j] = 1 #if all conditions are passed ,label the data as to be deleted
+            checkIfDelete[i+j] = 1
 
     deleteIndex=[]
     for i in range(0,arrayNum):
@@ -75,20 +81,15 @@ def cleanData(inputData,ageStandard,timeStandard,testNum):
     del resultData["level_0"]
     del resultData["index"]
             
-    return resultData
-
-
+    return resultData.T
 
 def timeDifference(time, i, j):
     difference = (time[i+j,1]-time[i,1])*3600 + (time[i+j,2]-time[i,2])*60 + time[i+j,3]-time[i,3]
     return difference
-    
-
 
 def ageDifference(inputData,i,j):
     difference = abs(inputData[i+j][5]-inputData[i][5])
     return difference
-
 
 
 
