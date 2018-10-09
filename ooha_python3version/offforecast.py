@@ -139,3 +139,4 @@ print(prob)
 
 file = open(str(routeName)+'offprob', 'wb')
 dill.dump(prob,file)
+file.close()

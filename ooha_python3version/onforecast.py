@@ -6,6 +6,7 @@ timestamp = sys.argv[3]
 import dill
 import numpy as np
 import time, datetime
+from sklearn.tree import tree
 file = open('rangedData','rb')
 rangedData = dill.load(file)
 file = open('stopName','rb')
@@ -16,22 +17,14 @@ file = open(str(routeName)+'offprob','rb')
 offprob = dill.load(file)
 file = open('rangedDataFull','rb')
 rangedDataFull = dill.load(file)
+file = open('clf','rb')
+clf = dill.load(file)
 
-def cluster (timestamp):
+def cluster (timestamp,weath):
+	global clf
 	wd = datetime.datetime.strptime(timestamp,'%Y-%m-%d %H:%M:%S').weekday()
 	hr = int(str(timestamp.split(' ')[1]).split(':')[0])
-	if wd == datetime.datetime.strptime("2011-01-01",'%Y-%m-%d').weekday() or wd == datetime.datetime.strptime("2011-01-02",'%Y-%m-%d').weekday():
-		if hr<=12 : 
-			return "weekend morning"
-		else:
-			return "weekend afternoon"
-	else:
-		if hr>=7 and hr<=9: 
-			return "weekday rush1" 
-		if hr>=17 and hr<=19:
-			return "weekday rush2"
-		else:
-			return "weekday off-peak"		
+	return clf.predict([[wd,hr,weath]])[0]	
 	
 #0: sunny 1: rainy
 def weather(time):
@@ -40,13 +33,14 @@ def weather(time):
 def onforecast (stopVec,routeName,timestamp,direction):
 	global stopName
 	global stopTime
-	clus = cluster(timestamp)
+	clus = cluster(timestamp,weather(timestamp))
+	print("cluster kth: ",clus)
 	select = []
 	selectTime = []
 	for i in range(len(stopName)):
 		formateDate = datetime.datetime.strptime(stopName[i,0].decode('utf-8'),'%Y-%m-%d %H:%M:%S')
 		cur = datetime.datetime.strptime(str(timestamp),'%Y-%m-%d %H:%M:%S')
-		if int(stopName[i,1])==int(direction) and int(stopName[i,2])==weather(timestamp) and stopName[i,3].decode('utf-8')==clus:
+		if int(stopName[i,1])==int(direction) and int(stopName[i,3].decode('utf-8'))==int(clus):
 			select.append(stopVec[i])
 			selectTime.append(stopTime[i])
 	
@@ -58,6 +52,7 @@ def onforecast (stopVec,routeName,timestamp,direction):
 			if not selectTime[i][j].decode('utf-8') == '':
 				hit[j] = hit[j] + 1
 				forecast[1][j] = forecast[1][j] + float(selectTime[i][j].decode('utf-8'))
+
 	for j in range(len(stopVec[0])):
 		if len(select) == 0:
 			return "no history data!"
@@ -69,7 +64,6 @@ def onforecast (stopVec,routeName,timestamp,direction):
 				forecast[0][j] = int(actual)
 			if hit[j] !=0:
 				forecast[1][j] = round(forecast[1][j]/hit[j])
-
 	pre = ''
 	for j in range(len(forecast[1])):
 		if pre == '' and forecast[1][j] == 0:
@@ -126,9 +120,7 @@ def getPass(on,prob):
 
 	return(passenger)
 
-for i in range(len(stopName)):
-	stopName[i,3] = cluster(stopName[i,0].decode('utf-8'))
-
+print(rangedData[0])
 x = onforecast(rangedData,routeName,timestamp,direction)
 
 a = []

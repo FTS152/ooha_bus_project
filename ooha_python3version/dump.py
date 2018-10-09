@@ -88,3 +88,4 @@ print('data count: '+str(len(number)))
 import dill
 file = open('results', 'wb')
 dill.dump(number,file)
+file.close()
