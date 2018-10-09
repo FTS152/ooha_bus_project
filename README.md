@@ -9,6 +9,9 @@ python dump.py [routeName] [direction] [date(YYYY-mm-dd)](dump data from Elastic
 python preprocess.py [routeName] [direction] (clustering each face to a bus
 ```
 ```
+python cluster.py [routeName] [direction] (pattern classification
+```
+```
 python onforecast.py [routeName] [direction] [time(YYYY-mm-dd HH:MM:SS)] (predict certain bus
 ```
 
@@ -16,5 +19,5 @@ python onforecast.py [routeName] [direction] [time(YYYY-mm-dd HH:MM:SS)] (predic
 python offforecast.py [routeName] [direction] (given on data and off average, generate the number of passengers between every stops
 ```
 ```
-python validation.py [routeName] [direction] (validate with MAD
+python validation.py [routeName] [direction] (validate with clustering and decision tree
 ```
