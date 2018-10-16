@@ -30,15 +30,16 @@ for i in range(19):
 
 bestClus = KMeans(n_clusters = bestClusNum).fit(rangedData)
 print('best k: ',bestClusNum)
-treeX = np.zeros((len(stopName),3))
+treeX = np.zeros((len(stopName),4))
 treeY = np.zeros((len(stopName)))
 
 for i in range(len(stopName)):
     treeX[i][0] = datetime.datetime.strptime(stopName[i,0].decode('utf-8'),'%Y-%m-%d %H:%M:%S').weekday()
     treeX[i][1] = int(str(stopName[i,0].decode('utf-8').split(' ')[1]).split(':')[0])
     treeX[i][2] = stopName[i,2]
+    treeX[i][3] = stopName[i,3]
     treeY[i] = bestClus.labels_[i]
-    stopName[i][3] = bestClus.labels_[i]
+    stopName[i][4] = bestClus.labels_[i]
 
 clf = tree.DecisionTreeClassifier()
 clf = clf.fit(treeX, treeY)

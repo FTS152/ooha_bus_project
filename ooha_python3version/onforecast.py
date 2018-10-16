@@ -6,6 +6,7 @@ timestamp = sys.argv[3]
 import dill
 import numpy as np
 import time, datetime
+from openpyxl import load_workbook
 from sklearn.tree import tree
 file = open('rangedData','rb')
 rangedData = dill.load(file)
@@ -20,27 +21,54 @@ rangedDataFull = dill.load(file)
 file = open('clf','rb')
 clf = dill.load(file)
 
+wb = load_workbook('weather.xlsx')
+weatherTimestamp = []
+temp = []
+rain = []
+for i in wb['0']['A'][1:]:
+    a = str(i.value).split("T", 1)[0]
+    b = str(i.value).split("T", 1)[1]
+    c = b.split("+", 1)[0]
+    weatherTimestamp.append(str(a+" "+c))
+for i in wb['0']['B'][1:]:
+    temp.append(i.value)
+for i in wb['0']['C'][1:]:
+    rain.append(i.value)
+
+
 def cluster (timestamp,weath):
 	global clf
 	wd = datetime.datetime.strptime(timestamp,'%Y-%m-%d %H:%M:%S').weekday()
 	hr = int(str(timestamp.split(' ')[1]).split(':')[0])
-	return clf.predict([[wd,hr,weath]])[0]	
+	return clf.predict([[wd,hr,weath[0],weath[1]]])[0]	
 	
 #0: sunny 1: rainy
 def weather(time):
-	return int(0)
+    global weatherTimestamp
+    global temp
+    global rain
+    for i in range(len(weatherTimestamp)):
+        data = datetime.datetime.strptime(time,'%Y-%m-%d %H:%M:%S')
+        cur = datetime.datetime.strptime(weatherTimestamp[i],'%Y-%m-%d %H:%M:%S')
+        if data < cur:
+            result = []
+            if int(rain[i]) == 0 or int(rain[i]) == -99:
+                result.append(int(0))
+            else:
+                result.append(int(1))
+            result.append(int(temp[i]))
+            return result
 
 def onforecast (stopVec,routeName,timestamp,direction):
 	global stopName
 	global stopTime
 	clus = cluster(timestamp,weather(timestamp))
-	print("cluster kth: ",clus)
 	select = []
 	selectTime = []
 	for i in range(len(stopName)):
 		formateDate = datetime.datetime.strptime(stopName[i,0].decode('utf-8'),'%Y-%m-%d %H:%M:%S')
 		cur = datetime.datetime.strptime(str(timestamp),'%Y-%m-%d %H:%M:%S')
-		if int(stopName[i,1])==int(direction) and int(stopName[i,3].decode('utf-8'))==int(clus):
+		if int(stopName[i,1])==int(direction) and int(stopName[i,4].decode('utf-8'))==int(clus):
 			select.append(stopVec[i])
 			selectTime.append(stopTime[i])
 	

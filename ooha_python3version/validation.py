@@ -3,6 +3,7 @@ import numpy as np
 import time, datetime
 from sklearn.tree import tree
 from sklearn.cluster import KMeans
+from openpyxl import load_workbook
 import sys
 routeName = sys.argv[1]
 direction = int(sys.argv[2])
@@ -13,6 +14,20 @@ file.close()
 file = open('stopName','rb')
 stopName = dill.load(file)
 file.close()
+
+wb = load_workbook('weather.xlsx')
+timestamp = []
+temp = []
+rain = []
+for i in wb['0']['A'][1:]:
+    a = str(i.value).split("T", 1)[0]
+    b = str(i.value).split("T", 1)[1]
+    c = b.split("+", 1)[0]
+    timestamp.append(str(a+" "+c))
+for i in wb['0']['B'][1:]:
+    temp.append(i.value)
+for i in wb['0']['C'][1:]:
+    rain.append(i.value)
 
 #normalize
 for i in range(len(rangedData)):
@@ -38,29 +53,25 @@ for i in range(18):
 
 bestClus = KMeans(n_clusters = bestClusNum).fit(training)
 print('最佳群數: ',bestClusNum)
-treeX = np.zeros((len(training),3))
+treeX = np.zeros((len(training),4))
 treeY = np.zeros((len(training)))
 
 for i in range(len(training)):
     treeX[i][0] = datetime.datetime.strptime(stopName[i,0].decode('utf-8'),'%Y-%m-%d %H:%M:%S').weekday()
     treeX[i][1] = int(str(stopName[i,0].decode('utf-8').split(' ')[1]).split(':')[0])
     treeX[i][2] = stopName[i,2]
+    treeX[i][3] = stopName[i,3]
     treeY[i] = bestClus.labels_[i]
-    stopName[i][3] = bestClus.labels_[i]
+    stopName[i][4] = bestClus.labels_[i]
 clf = tree.DecisionTreeClassifier()
 clf = clf.fit(treeX, treeY)
 
 
-def cluster (timestamp,weath):
+def cluster (timestamp,rain,temp):
 	global clf
 	wd = datetime.datetime.strptime(timestamp,'%Y-%m-%d %H:%M:%S').weekday()
 	hr = int(str(timestamp.split(' ')[1]).split(':')[0])
-	return clf.predict([[wd,hr,weath]])[0]			
-	
-#0: sunny 1: rainy
-def weather(time):
-	return int(0)
-
+	return clf.predict([[wd,hr,rain,temp]])[0]			
 
 ans = []
 for i in range(len(testing)):
@@ -77,7 +88,7 @@ for i in range(len(testing)):
 
 forecast = []
 for i in range(len(testing)):
-	forecast.append(int(cluster(stopName[part+i,0].decode('utf-8'),stopName[part+i,2].decode('utf-8'))))
+	forecast.append(int(cluster(stopName[part+i,0].decode('utf-8'),stopName[part+i,2].decode('utf-8'),stopName[part+i,3].decode('utf-8'))))
 
 res = 0
 for i in range(len(testing)):

@@ -1,6 +1,7 @@
 import dill
 import numpy as np
 import time, datetime
+from openpyxl import load_workbook
 file = open('results','rb')
 number = dill.load(file)
 
@@ -24,9 +25,23 @@ else:
 #index of data: 6=direction,7=date,8=time
 number = sorted(number,key = lambda x: (str(x[1]), str(x[7]),str(x[8])))
 
-stopName = np.empty((len(number),4),dtype='a32')
+stopName = np.empty((len(number),5),dtype='a32')
 stopTime = np.empty((len(number),len(stopLat)),dtype='a32')
 rangedDataFull = np.zeros((6,len(number),len(stopLat))) #0: little m 1: young m 2: old m 3: little f 4: young f 5: old f
+
+wb = load_workbook('weather.xlsx')
+timestamp = []
+temp = []
+rain = []
+for i in wb['0']['A'][1:]:
+    a = str(i.value).split("T", 1)[0]
+    b = str(i.value).split("T", 1)[1]
+    c = b.split("+", 1)[0]
+    timestamp.append(str(a+" "+c))
+for i in wb['0']['B'][1:]:
+    temp.append(i.value)
+for i in wb['0']['C'][1:]:
+    rain.append(i.value)
 
 def pos(lat,lon,stopLat,stopLon):
     M = 1
@@ -39,7 +54,20 @@ def pos(lat,lon,stopLat,stopLon):
 
 #0: sunny 1: rainy
 def weather(time):
-    return int(0)
+    global timestamp
+    global temp
+    global rain
+    for i in range(len(timestamp)):
+        data = datetime.datetime.strptime(time,'%Y-%m-%d %H:%M:%S')
+        cur = datetime.datetime.strptime(timestamp[i],'%Y-%m-%d %H:%M:%S')
+        if data < cur:
+            result = []
+            if int(rain[i]) == 0 or int(rain[i]) == -99:
+                result.append(int(0))
+            else:
+                result.append(int(1))
+            result.append(int(temp[i]))
+            return result
 
 def passenger(sex,age):
     if int(age)<25:
@@ -78,7 +106,9 @@ def schedule(data):
             now = 0
             stopName[counter][0] = str(data[i][7])+" "+str(data[i][8])
             stopName[counter][1] = str(data[i][6])
-            stopName[counter][2] = weather(stopName[counter][0])       
+            w = weather(stopName[counter][0].decode("utf-8"))
+            stopName[counter][2] = w[0]
+            stopName[counter][3] = w[1]       
         a = pos(data[i][2],data[i][3],stopLat,stopLon)
         stopInfo[counter][a] = stopInfo[counter][a]+1
         rangedDataFull[passenger(data[i][4],data[i][5])][counter][a] = rangedDataFull[passenger(data[i][4],data[i][5])][counter][a] + 1
