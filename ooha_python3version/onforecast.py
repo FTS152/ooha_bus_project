@@ -35,12 +35,20 @@ for i in wb['0']['B'][1:]:
 for i in wb['0']['C'][1:]:
     rain.append(i.value)
 
+def rush(day,hour):
+    if day != datetime.datetime.strptime("2011-01-01",'%Y-%m-%d').weekday() and day != datetime.datetime.strptime("2011-01-02",'%Y-%m-%d').weekday():
+        if (hour>=7 and hour<=9) or (hour>=17 and hour<=19): 
+            return int(1) 
+        else:
+            return int(0)
+    else:
+        return int(0)
 
 def cluster (timestamp,weath):
 	global clf
 	wd = datetime.datetime.strptime(timestamp,'%Y-%m-%d %H:%M:%S').weekday()
 	hr = int(str(timestamp.split(' ')[1]).split(':')[0])
-	return clf.predict([[wd,hr,weath[0],weath[1]]])[0]	
+	return clf.predict([[wd,hr,weath[0],weath[1],rush(wd,hr)]])[0]	
 	
 #0: sunny 1: rainy
 def weather(time):

@@ -27,7 +27,7 @@ number = sorted(number,key = lambda x: (str(x[1]), str(x[7]),str(x[8])))
 
 stopName = np.empty((len(number),5),dtype='a32')
 stopTime = np.empty((len(number),len(stopLat)),dtype='a32')
-rangedDataFull = np.zeros((6,len(number),len(stopLat))) #0: little m 1: young m 2: old m 3: little f 4: young f 5: old f
+rangedDataFull = np.zeros((12,len(number),len(stopLat))) #0: little m 1: young m 2: old m 3: little f 4: young f 5: old f
 
 wb = load_workbook('weather.xlsx')
 timestamp = []
@@ -70,21 +70,36 @@ def weather(time):
             return result
 
 def passenger(sex,age):
-    if int(age)<25:
+    if int(age)<20:
         if sex == 'male':
             return int(0)
         else:
-            return int(3)
-    elif int(age)<45 and int(age)>=25:
+            return int(6)
+    elif int(age)<30 and int(age)>=20:
         if sex == 'male':
             return int(1)
         else:
-            return int(4)
-    else:
+            return int(7)
+    elif int(age)<40 and int(age)>=30:
         if sex == 'male':
             return int(2)
         else:
+            return int(8)    
+    elif int(age)<50 and int(age)>=40:
+        if sex == 'male':
+            return int(3)
+        else:
+            return int(9)    
+    elif int(age)<60 and int(age)>=50:
+        if sex == 'male':
+            return int(4)
+        else:
+            return int(10)
+    else:
+        if sex == 'male':
             return int(5)
+        else:
+            return int(11)
 
 
 def schedule(data):
@@ -123,7 +138,7 @@ def schedule(data):
     stopInfo = np.delete(stopInfo, less, 0)
     stopTime = np.delete(stopTime, less, 0)
     stopName = np.delete(stopName, less, 0)
-    r = np.zeros((6,len(data)-len(less),len(stopLat)))
+    r = np.zeros((12,len(data)-len(less),len(stopLat)))
     for i in range(len(rangedDataFull)):
         r[i] = np.delete(rangedDataFull[i], less, 0)
     rangedDataFull = r

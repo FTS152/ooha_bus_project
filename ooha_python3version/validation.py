@@ -29,6 +29,15 @@ for i in wb['0']['B'][1:]:
 for i in wb['0']['C'][1:]:
     rain.append(i.value)
 
+def rush(day,hour):
+    if day != datetime.datetime.strptime("2011-01-01",'%Y-%m-%d').weekday() and day != datetime.datetime.strptime("2011-01-02",'%Y-%m-%d').weekday():
+        if (hour>=7 and hour<=9) or (hour>=17 and hour<=19): 
+            return int(1) 
+        else:
+            return int(0)
+    else:
+        return int(0)
+
 #normalize
 for i in range(len(rangedData)):
     a = []
@@ -53,7 +62,7 @@ for i in range(18):
 
 bestClus = KMeans(n_clusters = bestClusNum).fit(training)
 print('最佳群數: ',bestClusNum)
-treeX = np.zeros((len(training),4))
+treeX = np.zeros((len(training),5))
 treeY = np.zeros((len(training)))
 
 for i in range(len(training)):
@@ -61,6 +70,7 @@ for i in range(len(training)):
     treeX[i][1] = int(str(stopName[i,0].decode('utf-8').split(' ')[1]).split(':')[0])
     treeX[i][2] = stopName[i,2]
     treeX[i][3] = stopName[i,3]
+    treeX[i][4] = rush(treeX[i][0],treeX[i][1])
     treeY[i] = bestClus.labels_[i]
     stopName[i][4] = bestClus.labels_[i]
 clf = tree.DecisionTreeClassifier()
@@ -71,7 +81,7 @@ def cluster (timestamp,rain,temp):
 	global clf
 	wd = datetime.datetime.strptime(timestamp,'%Y-%m-%d %H:%M:%S').weekday()
 	hr = int(str(timestamp.split(' ')[1]).split(':')[0])
-	return clf.predict([[wd,hr,rain,temp]])[0]			
+	return clf.predict([[wd,hr,rain,temp,rush(wd,hr)]])[0]			
 
 ans = []
 for i in range(len(testing)):
