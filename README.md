@@ -6,6 +6,10 @@ Python Usage:
 python dump.py [routeName] [direction] [date(YYYY-mm-dd)](dump data from Elastic search
 ```
 ```
+python cleanData.py [ageStandard] [timeStandard] [testNumber](delete duplicated data given a self-defined criteria
+```
+
+```
 python preprocess.py [routeName] [direction] (clustering each face to a bus
 ```
 ```
