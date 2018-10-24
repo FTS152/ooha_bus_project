@@ -1,3 +1,8 @@
+# coding: utf-8
+
+# In[148]:
+
+
 #data must meet the following data rule
 #csv file column
 #0 : route number
@@ -17,23 +22,32 @@
 import dill
 import pandas as pd
 import numpy 
-
+from operator import itemgetter
+import sys
 
 #******important****** the 'results' in open() can be replaced by given fileName. User can change it.
-#file = open('results','rb')
+file = open('results','rb')
 #remember to close the file
-#results = dill.load(file)
-#inputData = pd.DataFrame(results)
+results = dill.load(file)
+inputData = pd.DataFrame(results)
+
+
+ageStd = int(sys.argv[1])
+timeStd = int(sys.argv[2])
+testN = int(sys.argv[3])
+
+
+# In[143]:
 
 
 def cleanData(inputData,ageStandard,timeStandard,testNum):
-    inputData=inputData.T.sort_values(by=[0,1,7,8]) #sort data by 0 route number 1 player info 7 date 8 time
-    inputData=inputData.reset_index()  
+    inputData=inputData.sort_values(by=[0,1,7,8]) #sort data by 0 route number 1 player info 7 date 8 time（轉置）
+    inputData=inputData.reset_index()
+    arrayNum = len(inputData.index)
     inputData=inputData.T
-    arrayNum = len(inputData.T.index)
     checkIfDelete = [0]*arrayNum # array is to see if given data is to be deleted
     time = numpy.zeros((arrayNum, 4))
-    
+
     
     for i in range(0,arrayNum):#deal with time
         temp = inputData[i][8].split(':')
@@ -80,16 +94,37 @@ def cleanData(inputData,ageStandard,timeStandard,testNum):
     resultData=resultData.reset_index()
     del resultData["level_0"]
     del resultData["index"]
-            
-    return resultData.T
+    
+    
+    arrayNum2 = len(resultData.index)
+    
+    resultArray=[]
+    for i in range(arrayNum2):
+        resultArray.append(resultData.T[i].tolist())
+    
+    return resultArray
+
 
 def timeDifference(time, i, j):
     difference = (time[i+j,1]-time[i,1])*3600 + (time[i+j,2]-time[i,2])*60 + time[i+j,3]-time[i,3]
+    if(i==0):
+        print(difference)
     return difference
 
 def ageDifference(inputData,i,j):
     difference = abs(inputData[i+j][5]-inputData[i][5])
     return difference
+
+
+result=cleanData(inputData,ageStd,timeStd,testN)
+
+file.close()
+with open('results', 'wb') as file:
+    dill.dump(result,file)
+
+
+
+
 
 
 
