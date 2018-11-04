@@ -41,7 +41,7 @@ def TakeTurn(TotalN,K,M,AdTime,AudienceNum, AudiencePreference, TotalBusTime,Sto
     for n in range(TotalN):
         for m in range(M):
             yTurn[n,m] = 0
-        if n is indi_T:
+        if n == indi_T:
             yTurn[n,indi_AD] = 1
             indi_T = indi_T + AdTime[indi_AD]
             indi_AD = (indi_AD+1)%M
@@ -60,7 +60,7 @@ def RandomTurn(TotalN,K,M,AdTime,AudienceNum, AudiencePreference, TotalBusTime,S
     for n in range(TotalN):
         for m in range(M):
             yRan[n,m] = 0
-        if n is indi_T:
+        if n == indi_T:
             yRan[n,indi_AD] = 1
             indi_T = indi_T + AdTime[indi_AD]
             indi_AD = random.randint(0,M-1)
