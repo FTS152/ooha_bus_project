@@ -75,9 +75,7 @@ def mycallback(model, where):
         time = model.cbGet(GRB.Callback.RUNTIME)
         objbst = model.cbGet(GRB.Callback.MIP_OBJBST)
         objbnd = model.cbGet(GRB.Callback.MIP_OBJBND)
-        if time > 2400.0:
-            model.terminate()
-        elif time > 1800.0:
+        if time > 1800.0:
             if abs(objbst-objbnd) < 0.04 * (1.0 + abs(objbst)):
                 print("Gap set to 4%")
                 model.terminate()                
@@ -183,7 +181,8 @@ def OurAlgorithm(StopNum, K,N,M, TotalN, AdTime,AudienceNum, AudiencePreference,
         hit[j] = quicksum( ((quicksum( AudienceNum[w,k]*AudiencePreference[j,k] for k in range(K)))* (quicksum( y[i,j] for i in range(TotalBusTime[w],TotalBusTime[w+1]) ) ) )for w in range(StopNum) )
     for j in range(M):
         m.addConstr( quicksum( ((quicksum( AudienceNum[w,k]*AudiencePreference[j,k] for k in range(K)))* (quicksum( y[i,j] for i in range(TotalBusTime[w],TotalBusTime[w+1]) ) ) )for w in range(StopNum) ) ==t[j] )    
-
+    
+    m.setParam("TimeLimit", 2400)
     m.setParam("MIPGap", 0.005)
     
     tstart = time.time()
@@ -353,14 +352,7 @@ for i in range(1):
         seed = random.randint(1,10000)
         data = DataGenerator(seed,custom[i])
         sheet.append(data)
-
-wb.save(path)
+        wb.save(path)
 
         
-
-
-# In[4]:
-
-
-custom.index([0,0,2,4,2])
 
