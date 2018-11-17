@@ -277,7 +277,7 @@ def DataGenerator(seed, Custom):
 max_row = sheet.max_row
 max_col = sheet.max_column    
 Custom_Type = [0,0,0,0,0]
-for i in range(3241,3242): #改這邊的range
+for i in range(3241,3242): #改這邊的range，要一次跑完就是改成(2,max_row+1)
     seed = sheet.cell(row = i,column = 20).value
     ads = sheet.cell(row = i, column = 1)
     if ads.value == 10:
