@@ -24,12 +24,14 @@ else:
     wb = Workbook()
     sheet = wb.active
     sheet.append(column_Name)
+    
+re = []
 
-def Genetic(TotalN,K,M,AdTime,AudienceNum, AudiencePreference, TotalBusTime,StopNum, Conflict):
-    alive = 5      #每代保留基因數
-    child = 25     #種群數量
-    t = 100        #迭代次數
-    mutent = 0.5   #突變機率
+def Genetic(TotalN,K,M,AdTime,AudienceNum, AudiencePreference, TotalBusTime,StopNum, Conflict,tStart):
+    alive = 45      #每代保留基因數
+    child = 50     #種群數量
+    t = 600        #迭代次數
+    mutent = 0.02   #突變機率
 
     #種群根據適應函數排列大小
     def sort_by_obj(mother,K,M,AdTime,AudienceNum, AudiencePreference, TotalBusTime,StopNum):
@@ -132,10 +134,14 @@ def Genetic(TotalN,K,M,AdTime,AudienceNum, AudiencePreference, TotalBusTime,Stop
         mother.append(y)
     
     #開始迭代
-    for i in range(t):
+    tEnd = time.time()
+    i = 0
+    while tEnd-tStart<350:
         tmp = sort_by_obj(mother,K,M,AdTime,AudienceNum, AudiencePreference, TotalBusTime,StopNum)
         mother = []
-        if (i%10) == 0:
+        global re
+        re.append(obj_value(tmp[0],K,M,AdTime,AudienceNum, AudiencePreference, TotalBusTime,StopNum))
+        if (i%100) == 0:
             print('the',i,'th Times ,MAX=',obj_value(tmp[0],K,M,AdTime,AudienceNum, AudiencePreference, TotalBusTime,StopNum))
         for j in range(alive):
             mother.append(tmp[j])
@@ -165,7 +171,9 @@ def Genetic(TotalN,K,M,AdTime,AudienceNum, AudiencePreference, TotalBusTime,Stop
                             break
                         new[mut+w] = mutAd
                 valid = validCheck(new,TotalN,K,M,AdTime, Conflict)
-            mother.append(new)           
+            mother.append(new)
+        tEnd = time.time()
+        i = i + 1
 
     yRan = {}
     indi_T = 0
@@ -257,13 +265,13 @@ def DataLoader(caseNum):
     for i in range(M):
         AdTime[i] = int(AdTime[i]/TickSize)
     tStart = time.time()
-    result,G_obj,G_sum = Genetic(TotalN,K,M,AdTime,AudienceNum, AudiencePreference, TotalBusTime,StopNum,Conflict)
+    result,G_obj,G_sum = Genetic(TotalN,K,M,AdTime,AudienceNum, AudiencePreference, TotalBusTime,StopNum,Conflict,tStart)
     tEnd = time.time()
     ans = (G_obj,G_sum,tEnd-tStart)
     print('排程結果:',result,'最小曝光度:',G_obj,'總合曝光度:',G_sum)
     return ans
 
-for i in range(0,2): #改這邊的range，上限99
+for i in range(0,25): #改這邊的range，上限99
     data = DataLoader(i)
     sheet.append(data)
     wb.save(path)
