@@ -3,8 +3,11 @@ from xml.etree import ElementTree
 from datetime import datetime
 from time import mktime
 import base64
-from requests import request
 from pprint import pprint
+from hashlib import sha1
+import hmac
+from wsgiref.handlers import format_date_time
+from requests import request
 
 #appid跟key在PTX申請
 app_id = 'd9d85ed532d04b4a9509c9abf08a0c6a'
